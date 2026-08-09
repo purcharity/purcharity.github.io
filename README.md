@@ -129,8 +129,8 @@ relatifs, tout est à plat dans le dossier.
 
 Il suffit d'envoyer le contenu du dossier `purcharity/` à la racine de l'hébergement.
 
-Le site est publié sur GitHub Pages à l'adresse **https://mrwinniepro-code.github.io/**
-(dépôt `mrwinniepro-code.github.io`). Sur ce nom de dépôt précis, Pages s'active
+Le site est publié sur GitHub Pages à l'adresse **https://purcharity.github.io/**
+(dépôt `purcharity.github.io`). Sur ce nom de dépôt précis, Pages s'active
 automatiquement : il n'y a aucun réglage à faire dans Settings.
 
 Pour mettre à jour le site : modifie `index.html`, puis envoie la nouvelle version.
@@ -141,7 +141,7 @@ git add . && git commit -m "mise a jour de la liste" && git push
 ```
 
 > Les balises Open Graph (`og:image`, `og:url`) pointent en URL absolue vers
-> `https://mrwinniepro-code.github.io/`. Si tu branches un nom de domaine à toi plus
+> `https://purcharity.github.io/`. Si tu branches un nom de domaine à toi plus
 > tard, il faudra les mettre à jour, sinon l'aperçu partagé sur Discord ou Twitter
 > continuera de pointer vers l'ancienne adresse.
 

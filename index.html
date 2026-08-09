@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PUR CHARITY — 4ème édition | Au profit des P'tits Doudous</title>
+<meta name="description" content="Événement caritatif Twitch au profit de l'association Les P'tits Doudous. Retrouvez tous les streamers présents, en présentiel et en distanciel.">
+<link rel="icon" href="logo-purcharity.png" type="image/png">
+
+<meta property="og:title" content="PUR CHARITY — 4ème édition">
+<meta property="og:description" content="Événement caritatif Twitch au profit de l'association Les P'tits Doudous.">
+<meta property="og:image" content="logo-purcharity.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Denk+One&family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#0a0113;
+  --deep:#26014a;
+  --pur:#9b7bf0;
+  --neon:#bc13fe;
+  --neon-soft:rgba(188,19,254,.45);
+  --white:#ffffff;
+  --pink:#e6007e;
+  --card:132px;
+}
+
+*{box-sizing:border-box}
+
+html{scroll-behavior:smooth}
+
+body{
+  margin:0;
+  padding:0;
+  min-height:100vh;
+  color:var(--white);
+  font-family:'Denk One',sans-serif;
+  background:var(--ink);
+  overflow-x:hidden;
+}
+
+/* ---------- FOND ---------- */
+.bg,
+.bg-veil{
+  position:fixed;
+  inset:0;
+  z-index:-3;
+  pointer-events:none;
+}
+.bg{
+  background:url('fond.jpg') center center / cover no-repeat;
+  background-attachment:fixed;
+}
+/* sans ce voile l'image de fond est bien trop claire, les textes deviennent illisibles */
+.bg-veil{
+  z-index:-2;
+  background:
+    radial-gradient(70% 50% at 50% 0%, rgba(188,19,254,.20), transparent 72%),
+    linear-gradient(to bottom, rgba(5,0,11,.48), rgba(5,0,11,.70)),
+    linear-gradient(to right, rgba(3,0,7,.94), rgba(22,1,42,.42) 50%, rgba(3,0,7,.94));
+}
+
+/* ---------- COEURS FLOTTANTS ---------- */
+.hearts{
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  overflow:hidden;
+}
+.heart{
+  position:absolute;
+  top:var(--top);
+  left:var(--left);
+  width:var(--size);
+  height:var(--size);
+  opacity:var(--op);
+  color:var(--pur);
+  filter:drop-shadow(0 0 6px rgba(188,19,254,.95)) drop-shadow(0 0 18px rgba(188,19,254,.55));
+  animation:bounce var(--dur) cubic-bezier(.45,0,.55,1) var(--delay) infinite alternate,
+            sway calc(var(--dur) * 2.6) ease-in-out var(--delay) infinite alternate;
+}
+.heart svg{width:100%;height:100%;display:block}
+
+@keyframes bounce{
+  from{transform:translateY(0) rotate(var(--rot))}
+  to  {transform:translateY(calc(var(--jump) * -1)) rotate(calc(var(--rot) * -1))}
+}
+@keyframes sway{
+  from{margin-left:0}
+  to  {margin-left:var(--drift)}
+}
+
+/* ---------- HERO ---------- */
+.hero{
+  text-align:center;
+  padding:22px 20px 6px;
+  max-width:1200px;
+  margin:0 auto;
+}
+
+.eyebrow{
+  font-family:'Passion One',cursive;
+  font-weight:700;
+  font-size:clamp(1rem,3.2vw,1.7rem);
+  letter-spacing:4px;
+  text-transform:uppercase;
+  margin:0 0 14px;
+  color:#fff;
+  text-shadow:0 0 6px #fff, 0 0 16px var(--neon), 0 0 34px var(--neon);
+}
+
+/* --- bloc asso cliquable --- */
+.asso{
+  position:relative;
+  display:inline-block;
+  padding:14px 24px;
+  border-radius:22px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(10,1,20,.42);
+  backdrop-filter:blur(3px);
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  cursor:pointer;
+  text-decoration:none;
+  color:inherit;
+  -webkit-tap-highlight-color:transparent;
+}
+.asso:hover,
+.asso:focus-visible{
+  transform:translateY(-4px) scale(1.03);
+  border-color:rgba(230,0,126,.6);
+  box-shadow:0 0 24px rgba(230,0,126,.45), 0 0 60px rgba(188,19,254,.3);
+}
+.asso:focus-visible{outline:2px solid #fff;outline-offset:6px}
+.asso img{
+  display:block;
+  width:min(215px,54vw);
+  height:auto;
+}
+.asso-cta{
+  display:block;
+  text-decoration:none;
+  margin-top:15px;
+  font-size:.78rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.62);
+}
+.asso.is-clicked{animation:asso-pop .78s ease both}
+@keyframes asso-pop{
+  0%{transform:scale(1)}
+  22%{transform:scale(.93) rotate(-1.5deg)}
+  48%{transform:scale(1.13) rotate(1.5deg);box-shadow:0 0 40px rgba(230,0,126,.85),0 0 90px rgba(188,19,254,.6)}
+  100%{transform:scale(1.02);box-shadow:0 0 30px rgba(230,0,126,.5)}
+}
+/* onde de choc */
+.asso.is-clicked::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:22px;
+  border:2px solid rgba(230,0,126,.9);
+  animation:ripple .78s ease-out forwards;
+  pointer-events:none;
+}
+@keyframes ripple{
+  from{transform:scale(1);opacity:.9}
+  to{transform:scale(1.35);opacity:0}
+}
+/* petits coeurs qui giclent au clic */
+.spark{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:22px;height:22px;
+  margin:-11px 0 0 -11px;
+  color:var(--pink);
+  pointer-events:none;
+  filter:drop-shadow(0 0 8px rgba(255,255,255,.9));
+  animation:spark .78s ease-out forwards;
+}
+.spark.blanc{color:#fff}
+.spark svg{width:100%;height:100%;display:block}
+@keyframes spark{
+  from{transform:translate(0,0) scale(.4);opacity:1}
+  to{transform:translate(var(--tx),var(--ty)) scale(1.15);opacity:0}
+}
+
+/* --- logos principaux --- */
+.logo-main{
+  display:block;
+  width:min(430px,74vw);
+  height:auto;
+  margin:16px auto 0;
+  filter:drop-shadow(0 0 30px rgba(188,19,254,.55));
+  animation:float 6s ease-in-out infinite alternate;
+}
+@keyframes float{from{transform:translateY(0)}to{transform:translateY(-12px)}}
+
+.logo-edition{
+  display:block;
+  width:min(250px,46vw);
+  height:auto;
+  margin:-4px auto 0;
+  filter:drop-shadow(0 0 18px rgba(188,19,254,.6));
+}
+
+.hero-rule{
+  width:min(560px,80vw);
+  height:1px;
+  margin:27px auto 0;
+  border:0;
+  background:linear-gradient(to right,transparent,rgba(188,19,254,.9),transparent);
+}
+
+/* ---------- CONTENU ---------- */
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 20px 40px;
+  text-align:center;
+}
+
+.section-title{
+  font-family:'Passion One',cursive;
+  font-size:clamp(2.1rem,7vw,3rem);
+  margin:56px 0 6px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:#fff;
+  text-shadow:0 0 5px #fff,0 0 10px #fff,0 0 20px var(--neon),0 0 40px var(--neon),0 0 80px var(--neon);
+}
+.section-count{
+  display:block;
+  margin:0 0 28px;
+  font-size:.85rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.66);
+  text-shadow:0 1px 6px rgba(0,0,0,.8);
+}
+
+/* flexbox et pas CSS grid : avec 2 ou 6 elements, auto-fill colle tout a gauche */
+.streamer-grid{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:flex-start;
+  gap:30px 18px;
+}
+
+.streamer-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:var(--card);
+  text-decoration:none;
+  color:inherit;
+  transition:transform .3s ease;
+}
+.streamer-card:hover,
+.streamer-card:focus-visible{transform:translateY(-6px)}
+.streamer-card:focus-visible{outline:2px solid #fff;outline-offset:6px;border-radius:14px}
+
+.avatar{
+  position:relative;
+  width:84px;
+  height:84px;
+  border-radius:50%;
+  border:3px solid #fff;
+  background:linear-gradient(150deg,#3a1163,#1a0230);
+  box-shadow:0 0 12px var(--neon-soft);
+  overflow:hidden;
+  margin-bottom:10px;
+  display:grid;
+  place-items:center;
+  transition:box-shadow .3s ease,border-color .3s ease;
+}
+.streamer-card:hover .avatar,
+.streamer-card:focus-visible .avatar{
+  box-shadow:0 0 18px rgba(188,19,254,.95),0 0 42px rgba(188,19,254,.55);
+  border-color:#e9dbff;
+}
+.avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+/* lettre de secours si aucun avatar ne charge */
+.avatar.fallback::after{
+  content:attr(data-initial);
+  font-family:'Passion One',cursive;
+  font-size:2.1rem;
+  line-height:1;
+  color:#d9c6ff;
+  text-shadow:0 0 10px var(--neon);
+}
+
+.streamer-name{
+  font-size:1rem;
+  color:#fff;
+  word-break:break-word;
+  line-height:1.25;
+  text-shadow:0 0 2px #fff,0 0 6px #d400ff;
+}
+/* pseudos longs : police reduite pour ne pas casser la grille */
+.streamer-name.long{font-size:.82rem;letter-spacing:0}
+
+/* --- mise en avant --- */
+.featured .streamer-grid{--card:180px;gap:36px 30px}
+.featured .avatar{width:132px;height:132px;border-width:4px;box-shadow:0 0 22px rgba(188,19,254,.8)}
+.featured .streamer-name{font-size:1.35rem}
+.featured .streamer-name.long{font-size:1.1rem}
+
+/* ---------- PIED DE PAGE ---------- */
+.footer{
+  max-width:1200px;
+  margin:0 auto;
+  padding:30px 20px 60px;
+  text-align:center;
+  font-size:.9rem;
+  color:rgba(255,255,255,.6);
+  line-height:1.9;
+}
+.footer a{color:#d9b8ff;text-decoration:none;border-bottom:1px solid rgba(217,184,255,.35)}
+.footer a:hover{color:#fff}
+.footer a:focus-visible{outline:2px solid #fff;outline-offset:4px}
+
+/* ---------- MOBILE ---------- */
+@media (max-width:600px){
+  :root{--card:96px}          /* 3 cartes par ligne des 390px de large */
+  .eyebrow{letter-spacing:2px}   /* tient sur une seule ligne des 390px */
+  .avatar{width:72px;height:72px}
+  .streamer-name{font-size:.88rem}
+  .streamer-name.long{font-size:.74rem}
+  .section-title{margin-top:46px}
+  .featured .streamer-grid{--card:130px}
+  .featured .avatar{width:104px;height:104px}
+  .featured .streamer-name{font-size:1.1rem}
+  .featured .streamer-name.long{font-size:.95rem}
+  .bg{background-attachment:scroll}   /* le fixed rame sur iOS */
+}
+
+/* ---------- ACCESSIBILITÉ ---------- */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="bg-veil"></div>
+<div class="hearts" id="hearts" aria-hidden="true"></div>
+
+<header class="hero">
+  <p class="eyebrow">Événement caritatif au profit de</p>
+
+  <a class="asso" id="asso" href="https://lesptitsdoudous.org/" target="_blank" rel="noopener">
+    <img src="logo-ptits-doudous.png" alt="Association Les P'tits Doudous — des soignants engagés pour les enfants opérés">
+    <span class="asso-cta">Découvrir l'association</span>
+  </a>
+
+  <img class="logo-main" src="logo-purcharity.png" alt="PUR CHARITY">
+  <img class="logo-edition" src="titre-4eme-edition.png" alt="4ème édition">
+
+  <hr class="hero-rule">
+</header>
+
+<main class="container" id="app"></main>
+
+<footer class="footer">
+  <p>
+    100 % des dons sont reversés à l'association
+    <a href="https://lesptitsdoudous.org/" target="_blank" rel="noopener">Les P'tits Doudous</a>.
+  </p>
+  <p>PUR CHARITY · 4ème édition</p>
+</footer>
+
+<script>
+/* =======================================================================
+   ▼▼▼  LISTE DES STREAMERS — C'EST ICI QU'ON AJOUTE / ENLÈVE DU MONDE  ▼▼▼
+
+   Pour AJOUTER un streamer : copie une ligne et change le pseudo.
+        { n:"pseudo_twitch" },
+
+   Le pseudo doit être EXACTEMENT celui de l'URL twitch.tv/pseudo.
+   La photo de profil et le lien vers la chaîne se font tout seuls.
+
+   Pour RETIRER quelqu'un : supprime sa ligne (avec la virgule).
+   Pour RÉORDONNER : déplace la ligne, l'affichage suit l'ordre du tableau.
+   Le compteur « X chaînes » sous chaque titre se recalcule tout seul.
+
+   Options possibles :
+        { n:"pseudo_twitch", label:"Nom Affiché", img:"https://lien-image.png" }
+   - label : si tu veux un affichage différent du pseudo
+   - img   : si tu veux forcer une image précise
+   ======================================================================= */
+
+const SECTIONS = [
+
+  { titre:"Mise en avant", classe:"featured", liste:[
+      { n:"puresportfr",   label:"PUREsportFR" },
+      { n:"jualkytv",      label:"JualkyTV" }
+  ]},
+
+  { titre:"Présentiel", liste:[
+      { n:"azzuria_" },
+      { n:"weeny__" },
+      { n:"madamepoulpy_" },
+      { n:"skyjytv" },
+      { n:"le_max__" },
+      { n:"clodeau" }
+  ]},
+
+  { titre:"Distanciel", liste:[
+      { n:"genki42" },
+      { n:"stl_angix" },
+      { n:"crackersmc_" },
+      { n:"foxienox" },
+      { n:"liyounee" },
+      { n:"majordytv" },
+      { n:"aresia_v" },
+      { n:"mitsuguru" },
+      { n:"oxyria" },
+      { n:"bylkaa" },
+      { n:"pyv_kurt",  label:"PYV_Kurt" },
+      { n:"sahaku__" },
+      { n:"toospycy" },
+      { n:"whitelupi_" },
+      { n:"thewilk_tv" },
+      { n:"patateyuki" },
+      { n:"l0xen_" },
+      { n:"pyv_lonzo" },
+      { n:"rinlevrai" },
+      { n:"archyball", label:"Archyball" },
+      { n:"gachalatte" },
+      { n:"nekonamc" },
+      { n:"gompubx" },
+      { n:"guiguisan_" },
+      { n:"hannohi" },
+      { n:"ilobee" },
+      { n:"meryyn_" },
+      { n:"theauu_" },
+      { n:"ttquentin" },
+      { n:"tytynetv" },
+      { n:"v4lorian" },
+      { n:"zx_ced" }
+  ]}
+];
+
+/* ▲▲▲  FIN DE LA LISTE — rien à toucher en dessous  ▲▲▲ */
+
+
+/* ---------- Coeur SVG réutilisé partout ---------- */
+const HEART_PATH = "M12 21s-7.5-4.7-9.6-9.2C.7 8.2 2.4 4.6 5.9 4c2-.3 3.9.6 4.9 2.2h.4C12.2 4.6 14.1 3.7 16.1 4c3.5.6 5.2 4.2 3.5 7.8C19.5 16.3 12 21 12 21z";
+const heartSVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="' + HEART_PATH + '"/></svg>';
+
+
+/* ---------- Construction des cartes ---------- */
+function carte(s){
+  const pseudo  = s.n.trim();
+  const affiche = s.label || pseudo;
+
+  const a = document.createElement('a');
+  a.className = 'streamer-card';
+  a.href = 'https://www.twitch.tv/' + pseudo;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  a.title = 'Voir la chaîne de ' + affiche;
+
+  const av = document.createElement('span');
+  av.className = 'avatar';
+  av.dataset.initial = affiche.charAt(0).toUpperCase();
+
+  const img = document.createElement('img');
+  img.alt = affiche;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+
+  /* Chaîne de secours : 1) unavatar  2) image forcée si fournie  3) DecAPI  4) initiale */
+  const sources = ['https://unavatar.io/twitch/' + encodeURIComponent(pseudo) + '?fallback=false'];
+  if (s.img) sources.push(s.img);
+  let i = 0;
+  img.onerror = () => {
+    i++;
+    if (i < sources.length) { img.src = sources[i]; }
+    else { secours(pseudo, img, av); }
+  };
+  img.src = sources[0];
+
+  const nom = document.createElement('span');
+  nom.className = 'streamer-name' + (affiche.length > 12 ? ' long' : '');
+  nom.textContent = affiche;
+
+  av.appendChild(img);
+  a.appendChild(av);
+  a.appendChild(nom);
+  return a;
+}
+
+/* Si le service d'avatars ne répond pas, on demande l'URL réelle du CDN Twitch
+   à DecAPI (réponse en texte brut). Si ça échoue aussi, on affiche l'initiale. */
+function secours(pseudo, img, av){
+  fetch('https://decapi.me/twitch/avatar/' + encodeURIComponent(pseudo))
+    .then(r => r.ok ? r.text() : Promise.reject())
+    .then(url => {
+      url = (url || '').trim();
+      if (!url.startsWith('http')) throw 0;
+      img.onerror = () => { img.remove(); av.classList.add('fallback'); };
+      img.src = url;
+    })
+    .catch(() => { img.remove(); av.classList.add('fallback'); });
+}
+
+const app = document.getElementById('app');
+
+SECTIONS.forEach(sec => {
+  const bloc = document.createElement('section');
+  if (sec.classe) bloc.className = sec.classe;
+
+  const h = document.createElement('h2');
+  h.className = 'section-title';
+  h.textContent = sec.titre;
+
+  const c = document.createElement('span');
+  c.className = 'section-count';
+  c.textContent = sec.liste.length + (sec.liste.length > 1 ? ' chaînes' : ' chaîne');
+
+  const grid = document.createElement('div');
+  grid.className = 'streamer-grid';
+  sec.liste.forEach(s => grid.appendChild(carte(s)));
+
+  bloc.append(h, c, grid);
+  app.appendChild(bloc);
+});
+
+
+/* ---------- Coeurs de fond ---------- */
+(function fondCoeurs(){
+  const zone = document.getElementById('hearts');
+  const N = window.innerWidth < 700 ? 12 : 22;
+  const r = (a,b) => a + Math.random() * (b - a);
+
+  for (let k = 0; k < N; k++){
+    const h = document.createElement('div');
+    h.className = 'heart';
+    const cote = Math.random() < .5 ? r(0,27) : r(72,97);   // on laisse le centre lisible
+    h.style.setProperty('--left',  cote.toFixed(1) + 'vw');
+    h.style.setProperty('--top',   r(2,94).toFixed(1) + 'vh');
+    h.style.setProperty('--size',  r(13,32).toFixed(0) + 'px');
+    h.style.setProperty('--op',    r(.22,.55).toFixed(2));
+    h.style.setProperty('--jump',  r(14,38).toFixed(0) + 'px');
+    h.style.setProperty('--drift', (Math.random() < .5 ? '-' : '') + r(10,34).toFixed(0) + 'px');
+    h.style.setProperty('--rot',   (Math.random() < .5 ? '-' : '') + r(4,14).toFixed(0) + 'deg');
+    h.style.setProperty('--dur',   r(2.2,4.6).toFixed(2) + 's');
+    h.style.setProperty('--delay', r(0,3).toFixed(2) + 's');
+    h.innerHTML = heartSVG;
+    zone.appendChild(h);
+  }
+})();
+
+
+/* ---------- Animation au clic sur le logo de l'asso ---------- */
+(function assoClic(){
+  const asso = document.getElementById('asso');
+  let enCours = false;   // verrou : empeche de relancer l'anim si on spamme le clic
+
+  asso.addEventListener('click', e => {
+    if (enCours) return;
+    e.preventDefault();
+    enCours = true;
+
+    asso.classList.add('is-clicked');
+
+    // gerbe de petits coeurs, alternes rose et blanc
+    for (let k = 0; k < 14; k++){
+      const s = document.createElement('span');
+      s.className = 'spark' + (k % 2 ? ' blanc' : '');
+      const ang = (Math.PI * 2 * k) / 14 + Math.random() * .4;
+      const d = 115 + Math.random() * 95;
+      s.style.setProperty('--tx', (Math.cos(ang) * d).toFixed(0) + 'px');
+      s.style.setProperty('--ty', (Math.sin(ang) * d).toFixed(0) + 'px');
+      s.style.animationDelay = (Math.random() * .12).toFixed(2) + 's';
+      s.innerHTML = heartSVG;
+      asso.appendChild(s);
+      setTimeout(() => s.remove(), 1000);
+    }
+
+    setTimeout(() => {
+      const w = window.open(asso.href, '_blank', 'noopener');
+      if (!w) window.location.href = asso.href;   // repli si le navigateur bloque l'onglet
+      asso.classList.remove('is-clicked');
+      enCours = false;
+    }, 780);
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -313,6 +313,9 @@ body{
 /* pseudos longs : police reduite pour ne pas casser la grille */
 .streamer-name.long{font-size:.82rem;letter-spacing:0}
 
+/* section sans intitule : il faut recreer l'espace que prenait le titre */
+.sans-titre .streamer-grid{margin-top:44px}
+
 /* --- mise en avant --- */
 .featured .streamer-grid{--card:180px;gap:36px 30px}
 .featured .avatar{width:132px;height:132px;border-width:4px;box-shadow:0 0 22px rgba(188,19,254,.8)}
@@ -403,12 +406,22 @@ body{
         { n:"pseudo_twitch", label:"Nom Affiché", img:"https://lien-image.png" }
    - label : si tu veux un affichage différent du pseudo
    - img   : si tu veux forcer une image précise
+
+   Options d'une SECTION :
+   - titre  : l'intitulé affiché. Si tu l'enlèves, la section s'affiche nue,
+              sans intitulé ni compteur (c'est le cas de la chaîne du haut).
+   - classe : mets "featured" pour des cartes plus grosses.
    ======================================================================= */
 
 const SECTIONS = [
 
+  /* Chaine mise en tete, sans aucun titre au-dessus.
+     Une section sans "titre" n'affiche ni intitule ni compteur. */
+  { classe:"featured", liste:[
+      { n:"puresportfr", label:"PUREsportFR" }
+  ]},
+
   { titre:"Présentiel", liste:[
-      { n:"puresportfr", label:"PUREsportFR" },
       { n:"jualkytv",    label:"JualkyTV" },
       { n:"azzuria_" },
       { n:"weeny__" },
@@ -525,19 +538,26 @@ SECTIONS.forEach(sec => {
   const bloc = document.createElement('section');
   if (sec.classe) bloc.className = sec.classe;
 
-  const h = document.createElement('h2');
-  h.className = 'section-title';
-  h.textContent = sec.titre;
-
-  const c = document.createElement('span');
-  c.className = 'section-count';
-  c.textContent = sec.liste.length + (sec.liste.length > 1 ? ' chaînes' : ' chaîne');
-
   const grid = document.createElement('div');
   grid.className = 'streamer-grid';
   sec.liste.forEach(s => grid.appendChild(carte(s)));
 
-  bloc.append(h, c, grid);
+  // une section sans "titre" s'affiche nue : ni intitule, ni compteur
+  if (sec.titre) {
+    const h = document.createElement('h2');
+    h.className = 'section-title';
+    h.textContent = sec.titre;
+
+    const c = document.createElement('span');
+    c.className = 'section-count';
+    c.textContent = sec.liste.length + (sec.liste.length > 1 ? ' chaînes' : ' chaîne');
+
+    bloc.append(h, c, grid);
+  } else {
+    bloc.classList.add('sans-titre');
+    bloc.append(grid);
+  }
+
   app.appendChild(bloc);
 });
 

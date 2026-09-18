@@ -629,6 +629,11 @@ const heartSVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true
 /* ---------- Construction des cartes ---------- */
 const CHAINES = [];   // rempli par carte(), relu par le module "en direct"
 
+/* Photos officielles Twitch, récupérées par le module "en direct" plus bas
+   dans la même requête que les statuts. Les avatars s'en servent en secours. */
+let donnerPhotos;
+const PHOTOS_TWITCH = new Promise(r => { donnerPhotos = r; });
+
 function carte(s){
   const pseudo  = s.n.trim();
   const affiche = s.label || pseudo;
@@ -650,7 +655,8 @@ function carte(s){
   img.decoding = 'async';
   img.referrerPolicy = 'no-referrer';
 
-  /* Chaîne de secours : 1) unavatar  2) image forcée si fournie  3) DecAPI  4) initiale */
+  /* Chaîne de secours : 1) unavatar  2) image forcée si fournie
+                         3) photo officielle Twitch  4) DecAPI  5) initiale */
   const sources = ['https://unavatar.io/twitch/' + encodeURIComponent(pseudo) + '?fallback=false'];
   if (s.img) sources.push(s.img);
   let i = 0;
@@ -702,18 +708,35 @@ function carte(s){
   return item;
 }
 
-/* Si le service d'avatars ne répond pas, on demande l'URL réelle du CDN Twitch
-   à DecAPI (réponse en texte brut). Si ça échoue aussi, on affiche l'initiale. */
+/* Étape 3 : la photo officielle Twitch, issue de la requête groupée.
+   C'est la source la plus fiable, mais elle arrive avec un léger délai,
+   d'où l'attente plafonnée à 6 s pour ne jamais bloquer une carte. */
 function secours(pseudo, img, av){
+  const initiale = () => { img.remove(); av.classList.add('fallback'); };
+
+  Promise.race([
+    PHOTOS_TWITCH,
+    new Promise(r => setTimeout(() => r(null), 6000))
+  ]).then(photos => {
+    const url = photos && photos.get(pseudo);
+    if (!url) return Promise.reject();
+    img.onerror = () => secoursDecapi(pseudo, img, initiale);
+    img.src = url;
+  }).catch(() => secoursDecapi(pseudo, img, initiale));
+}
+
+/* Étape 4, dernier recours : DecAPI renvoie l'URL du CDN Twitch en texte brut.
+   Ce service limite le nombre de requêtes, d'où sa place en fin de chaîne. */
+function secoursDecapi(pseudo, img, initiale){
   fetch('https://decapi.me/twitch/avatar/' + encodeURIComponent(pseudo))
     .then(r => r.ok ? r.text() : Promise.reject())
     .then(url => {
       url = (url || '').trim();
       if (!url.startsWith('http')) throw 0;
-      img.onerror = () => { img.remove(); av.classList.add('fallback'); };
+      img.onerror = initiale;
       img.src = url;
     })
-    .catch(() => { img.remove(); av.classList.add('fallback'); });
+    .catch(initiale);
 }
 
 const app = document.getElementById('app');
@@ -758,7 +781,10 @@ SECTIONS.forEach(sec => {
    ======================================================================= */
 (function directs(){
   const RAFRAICHIR = 60000;   // on revérifie qui est en direct chaque minute
-  const PAQUET     = 8;       // requêtes simultanées, pour ne pas assommer DecAPI
+  const PAQUET     = 3;       // seulement pour le repli, voir tourUnParUn()
+
+  // identifiant public du site web de Twitch, pas une clé personnelle
+  const CLIENT_ID  = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
 
   // Twitch exige que le domaine de la page soit déclaré dans "parent"
   const PARENT = location.hostname || 'purcharity.github.io';
@@ -809,28 +835,72 @@ SECTIONS.forEach(sec => {
 
   CHAINES.forEach(c => c.vignette.addEventListener('click', () => ouvrir(c)));
 
-  async function verifier(c){
-    try {
-      const r = await fetch('https://decapi.me/twitch/uptime/' + encodeURIComponent(c.pseudo));
-      if (!r.ok) return;
-      const t = (await r.text()).trim().toLowerCase();
-      // DecAPI renvoie la duree du direct, ou "<pseudo> is offline"
-      const enDirect = t.length > 0 && !t.includes('offline')
-                       && !t.includes('error') && !t.includes('not found');
+  function appliquer(c, enDirect){
+    c.item.classList.toggle('est-live', enDirect);
+    if (enDirect) {
+      const u = urlVignette(c.pseudo);
+      if (c.apercu.getAttribute('src') !== u) c.apercu.src = u;
+    }
+  }
 
-      c.item.classList.toggle('est-live', enDirect);
-      if (enDirect) {
-        const u = urlVignette(c.pseudo);
-        if (c.apercu.src !== u) c.apercu.src = u;
-      }
-    } catch (e) {
-      /* service injoignable : on ne touche a rien */
+  /* --- Methode principale : UNE seule requete pour les 55 chaines ---
+     On interroge le point d'entree public de Twitch (celui qu'utilise leur
+     propre site) avec une requete groupee. ~2,6 Ko, ~300 ms, et surtout une
+     seule connexion par visiteur au lieu de 55. */
+  async function tourGroupe(){
+    // un login Twitch ne contient que des lettres, chiffres et "_"
+    const liste = CHAINES.filter(c => /^[a-zA-Z0-9_]+$/.test(c.pseudo));
+    if (!liste.length) throw 0;
+
+    // on demande la photo ET le statut dans la meme requete
+    const champs = liste.map((c, i) =>
+      'c' + i + ': user(login:"' + c.pseudo + '"){ profileImageURL(width:300) stream { id } }');
+
+    const r = await fetch('https://gql.twitch.tv/gql', {
+      method: 'POST',
+      headers: { 'Client-ID': CLIENT_ID, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: '{' + champs.join(' ') + '}' })
+    });
+    if (!r.ok) throw 0;
+
+    const d = (await r.json()).data;
+    if (!d) throw 0;
+
+    const photos = new Map();
+    liste.forEach((c, i) => {
+      const u = d['c' + i];
+      appliquer(c, !!(u && u.stream));
+      if (u && u.profileImageURL) photos.set(c.pseudo, u.profileImageURL);
+    });
+    donnerPhotos(photos);   // debloque les avatars en attente
+  }
+
+  /* --- Repli si Twitch ne repond pas : DecAPI, une chaine a la fois ---
+     Volontairement lent (3 en parallele + pause) : ce service limite le
+     nombre de requetes et renvoie alors des erreurs bloquees par le
+     navigateur. Mieux vaut un affichage progressif qu'un blocage. */
+  async function tourUnParUn(){
+    for (let i = 0; i < CHAINES.length; i += PAQUET) {
+      await Promise.all(CHAINES.slice(i, i + PAQUET).map(async c => {
+        try {
+          const r = await fetch('https://decapi.me/twitch/uptime/' + encodeURIComponent(c.pseudo));
+          if (!r.ok) return;
+          const t = (await r.text()).trim().toLowerCase();
+          // DecAPI renvoie la duree du direct, ou "<pseudo> is offline"
+          appliquer(c, t.length > 0 && !t.includes('offline')
+                       && !t.includes('error') && !t.includes('not found'));
+        } catch (e) { /* on passe a la suivante */ }
+      }));
+      await new Promise(r => setTimeout(r, 300));
     }
   }
 
   async function tour(){
-    for (let i = 0; i < CHAINES.length; i += PAQUET) {
-      await Promise.all(CHAINES.slice(i, i + PAQUET).map(verifier));
+    try { await tourGroupe(); }
+    catch (e) {
+      donnerPhotos(null);   // pas de photos officielles : les avatars passent a l'etape suivante
+      try { await tourUnParUn(); }
+      catch (e2) { /* aucun service joignable : la page reste telle quelle */ }
     }
   }
 

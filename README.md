@@ -105,14 +105,15 @@ Aucune clé API Twitch n'est nécessaire. Pour chaque streamer, le site essaie
 
 1. **`unavatar.io`** — service public qui renvoie l'avatar Twitch ;
 2. **la clé `img`** de la fiche, si tu en as mis une ;
-3. **`decapi.me`** — renvoie en texte brut l'URL réelle du CDN Twitch ;
-4. **l'initiale du pseudo** en gros dans le rond violet.
+3. **la photo officielle Twitch**, récupérée dans la même requête que les directs ;
+4. **`decapi.me`** — renvoie en texte brut l'URL réelle du CDN Twitch ;
+5. **l'initiale du pseudo** en gros dans le rond violet.
 
 Comme ça la page reste propre même si un service tombe : au pire on voit une lettre,
 jamais une image cassée.
 
-En pratique, une partie des avatars passe par l'étape 3 (`unavatar` ne connaît pas
-tout le monde) — c'est normal et invisible pour le visiteur.
+En pratique, une bonne partie des avatars passe par l'étape 3 (`unavatar` ne connaît
+pas tout le monde) — c'est normal et invisible pour le visiteur.
 
 **Un avatar affiche une lettre au lieu de la photo ?** Vérifie d'abord l'orthographe
 du pseudo : c'est la cause dans 9 cas sur 10. Sinon, tu peux forcer l'image à la main :
@@ -135,13 +136,14 @@ dans une fenêtre par-dessus la page. À la fermeture (bouton, clic à côté, o
 C'est ce qui évite les pics de connexion : même avec 20 personnes en direct, la page
 ne télécharge que 20 petites images, jamais 20 flux vidéo.
 
-Comme pour les avatars, aucune clé API n'est nécessaire :
+Aucune clé API n'est nécessaire. Les 55 statuts **et** les 55 photos de profil
+arrivent dans **une seule requête** (~2,6 Ko, ~300 ms) adressée au point d'entrée
+public de Twitch. C'est important : la version précédente faisait une requête par
+streamer, et le service se faisait couper au bout d'une trentaine.
 
-- le statut vient de `decapi.me/twitch/uptime/<pseudo>`
-- la vignette vient du CDN Twitch, à une adresse prévisible
-
-Si l'un des deux services tombe, il ne se passe rien de grave : les badges
-n'apparaissent pas et la page reste parfaitement utilisable.
+Si Twitch ne répond pas, le site bascule sur `decapi.me`, plus lentement mais sans
+rien casser. Et si aucun service ne répond, les badges n'apparaissent simplement
+pas : la page reste parfaitement utilisable.
 
 > ⚠️ Le lecteur Twitch n'accepte de se lancer que sur un domaine déclaré. Le site
 > s'en occupe seul en lisant l'adresse de la page, donc ça marche aussi bien en local

@@ -121,6 +121,33 @@ l'image », et colle-la dans `img:"..."`.
 
 ---
 
+## Le badge « en direct » et les vignettes
+
+Quand un streamer de la liste est en direct sur Twitch, sa carte affiche
+automatiquement un badge rouge **EN DIRECT** et une petite vignette de son stream.
+Tu n'as rien à faire : c'est détecté tout seul et vérifié **toutes les minutes**.
+
+**Aucune vidéo n'est chargée au chargement de la page.** La vignette est une simple
+image d'environ 8 Ko. Ce n'est qu'au clic dessus que le vrai lecteur Twitch se lance,
+dans une fenêtre par-dessus la page. À la fermeture (bouton, clic à côté, ou touche
+`Échap`), le lecteur est **détruit** : le flux est coupé et ne consomme plus rien.
+
+C'est ce qui évite les pics de connexion : même avec 20 personnes en direct, la page
+ne télécharge que 20 petites images, jamais 20 flux vidéo.
+
+Comme pour les avatars, aucune clé API n'est nécessaire :
+
+- le statut vient de `decapi.me/twitch/uptime/<pseudo>`
+- la vignette vient du CDN Twitch, à une adresse prévisible
+
+Si l'un des deux services tombe, il ne se passe rien de grave : les badges
+n'apparaissent pas et la page reste parfaitement utilisable.
+
+> ⚠️ Le lecteur Twitch n'accepte de se lancer que sur un domaine déclaré. Le site
+> s'en occupe seul en lisant l'adresse de la page, donc ça marche aussi bien en local
+> qu'en ligne. Mais si tu changes un jour d'adresse, vérifie que les directs
+> s'ouvrent encore.
+
 ## Mise en ligne
 
 Le site est déposable tel quel sur n'importe quel hébergeur statique

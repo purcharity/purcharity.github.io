@@ -255,11 +255,19 @@ body{
   gap:30px 18px;
 }
 
-.streamer-card{
+/* enveloppe : la carte-lien + le bloc "en direct" en dessous */
+.streamer-item{
   display:flex;
   flex-direction:column;
   align-items:center;
   width:var(--card);
+}
+
+.streamer-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
   text-decoration:none;
   color:inherit;
   transition:transform .3s ease;
@@ -312,6 +320,119 @@ body{
 }
 /* pseudos longs : police reduite pour ne pas casser la grille */
 .streamer-name.long{font-size:.82rem;letter-spacing:0}
+
+/* ---------- EN DIRECT : badge + vignette ----------
+   Rien ne s'affiche tant que la chaine n'est pas detectee en direct.
+   Aucune video n'est chargee ici : la vignette est une simple image. */
+.live-badge{
+  display:none;
+  align-items:center;
+  gap:5px;
+  margin-top:7px;
+  padding:2px 9px;
+  border-radius:999px;
+  background:#e91916;
+  font-size:.6rem;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:#fff;
+  box-shadow:0 0 10px rgba(233,25,22,.85);
+}
+.est-live .live-badge{display:inline-flex}
+.live-pastille{
+  width:6px;height:6px;border-radius:50%;
+  background:#fff;
+  animation:pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+.live-vignette{
+  display:none;
+  position:relative;
+  width:100%;
+  margin-top:8px;
+  padding:0;
+  border:0;
+  border-radius:10px;
+  overflow:hidden;
+  aspect-ratio:16/9;
+  background:#150026;
+  cursor:pointer;
+  box-shadow:0 0 12px rgba(188,19,254,.45);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+.est-live .live-vignette{display:block}
+.live-vignette img{width:100%;height:100%;object-fit:cover;display:block}
+.live-vignette:hover,
+.live-vignette:focus-visible{transform:scale(1.05);box-shadow:0 0 20px rgba(188,19,254,.95)}
+.live-vignette:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.live-play{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  background:rgba(8,0,16,.32);
+}
+.live-play svg{
+  width:24px;height:24px;fill:#fff;
+  filter:drop-shadow(0 0 6px rgba(0,0,0,.95));
+}
+
+/* ---------- LECTEUR (charge seulement au clic) ---------- */
+.modal{
+  position:fixed;
+  inset:0;
+  z-index:50;
+  display:none;
+  place-items:center;
+  padding:20px;
+  background:rgba(4,0,9,.9);
+  backdrop-filter:blur(6px);
+}
+.modal.ouvert{display:grid}
+.modal-boite{width:min(980px,100%)}
+.modal-tete{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:12px;
+  flex-wrap:wrap;
+}
+.modal-titre{
+  font-family:'Passion One',cursive;
+  font-size:clamp(1.3rem,4vw,1.9rem);
+  letter-spacing:1px;
+  color:#fff;
+  text-shadow:0 0 10px var(--neon),0 0 24px var(--neon);
+  margin:0;
+}
+.modal-actions{display:flex;gap:10px;align-items:center}
+.modal-btn{
+  font-family:'Denk One',sans-serif;
+  font-size:.75rem;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:#fff;
+  text-decoration:none;
+  padding:10px 16px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.07);
+  cursor:pointer;
+}
+.modal-btn:hover,
+.modal-btn:focus-visible{background:rgba(230,0,126,.35);border-color:rgba(230,0,126,.75)}
+.modal-lecteur{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 0 44px rgba(188,19,254,.5);
+}
+.modal-lecteur iframe{width:100%;height:100%;border:0;display:block}
 
 /* section sans intitule : il faut recreer l'espace que prenait le titre */
 .sans-titre .streamer-grid{margin-top:44px}
@@ -379,6 +500,21 @@ body{
 </header>
 
 <main class="container" id="app"></main>
+
+<!-- Lecteur Twitch. Vide au chargement : l'iframe n'est créée qu'au clic
+     sur une vignette, et détruite à la fermeture pour couper le flux. -->
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titre" hidden>
+  <div class="modal-boite">
+    <div class="modal-tete">
+      <h2 class="modal-titre" id="modal-titre"></h2>
+      <div class="modal-actions">
+        <a class="modal-btn" id="modal-lien" href="#" target="_blank" rel="noopener">Ouvrir sur Twitch</a>
+        <button class="modal-btn" id="modal-fermer" type="button">✕ Fermer le direct</button>
+      </div>
+    </div>
+    <div class="modal-lecteur" id="modal-lecteur"></div>
+  </div>
+</div>
 
 <footer class="footer">
   <p>
@@ -491,6 +627,8 @@ const heartSVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true
 
 
 /* ---------- Construction des cartes ---------- */
+const CHAINES = [];   // rempli par carte(), relu par le module "en direct"
+
 function carte(s){
   const pseudo  = s.n.trim();
   const affiche = s.label || pseudo;
@@ -530,7 +668,38 @@ function carte(s){
   av.appendChild(img);
   a.appendChild(av);
   a.appendChild(nom);
-  return a;
+
+  /* --- enveloppe + zone "en direct" (masquee tant que la chaine est hors ligne) --- */
+  const item = document.createElement('div');
+  item.className = 'streamer-item';
+
+  const badge = document.createElement('span');
+  badge.className = 'live-badge';
+  badge.innerHTML = '<span class="live-pastille"></span>En direct';
+
+  const vig = document.createElement('button');
+  vig.className = 'live-vignette';
+  vig.type = 'button';
+  vig.title = 'Regarder le direct de ' + affiche;
+  vig.setAttribute('aria-label', 'Regarder le direct de ' + affiche);
+
+  const apercu = document.createElement('img');
+  apercu.alt = '';
+  apercu.loading = 'lazy';
+  apercu.decoding = 'async';
+  apercu.referrerPolicy = 'no-referrer';
+
+  const play = document.createElement('span');
+  play.className = 'live-play';
+  play.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+
+  vig.append(apercu, play);
+  item.append(a, badge, vig);
+
+  // enregistre la chaine pour la verification periodique du direct
+  CHAINES.push({ pseudo, affiche, item, apercu, vignette: vig });
+
+  return item;
 }
 
 /* Si le service d'avatars ne répond pas, on demande l'URL réelle du CDN Twitch
@@ -575,6 +744,99 @@ SECTIONS.forEach(sec => {
 
   app.appendChild(bloc);
 });
+
+
+/* =======================================================================
+   EN DIRECT — badge, vignette, et lecteur uniquement sur demande
+
+   Principe : aucune vidéo n'est chargée au chargement de la page.
+   On demande juste à DecAPI qui est en direct (réponse texte), puis on
+   affiche une image de 320x180 (~8 Ko). La vraie vidéo n'est créée qu'au
+   clic, et l'iframe est détruite à la fermeture pour couper le flux.
+
+   Si DecAPI ne répond pas, il ne se passe rien : la page reste telle quelle.
+   ======================================================================= */
+(function directs(){
+  const RAFRAICHIR = 60000;   // on revérifie qui est en direct chaque minute
+  const PAQUET     = 8;       // requêtes simultanées, pour ne pas assommer DecAPI
+
+  // Twitch exige que le domaine de la page soit déclaré dans "parent"
+  const PARENT = location.hostname || 'purcharity.github.io';
+
+  const modal   = document.getElementById('modal');
+  const boite   = document.getElementById('modal-lecteur');
+  const titre   = document.getElementById('modal-titre');
+  const lien    = document.getElementById('modal-lien');
+  const fermerB = document.getElementById('modal-fermer');
+
+  function urlVignette(pseudo){
+    // le parametre de fin force le navigateur a reprendre une image fraiche
+    return 'https://static-cdn.jtvnw.net/previews-ttv/live_user_'
+         + encodeURIComponent(pseudo) + '-320x180.jpg?r=' + Math.floor(Date.now() / RAFRAICHIR);
+  }
+
+  function ouvrir(c){
+    titre.textContent = c.affiche;
+    lien.href = 'https://www.twitch.tv/' + c.pseudo;
+
+    const f = document.createElement('iframe');
+    f.src = 'https://player.twitch.tv/?channel=' + encodeURIComponent(c.pseudo)
+          + '&parent=' + encodeURIComponent(PARENT) + '&autoplay=true&muted=false';
+    f.allow = 'autoplay; fullscreen; picture-in-picture';
+    f.allowFullscreen = true;
+    f.title = 'Direct de ' + c.affiche;
+
+    boite.innerHTML = '';
+    boite.appendChild(f);
+    modal.hidden = false;
+    modal.classList.add('ouvert');
+    document.body.style.overflow = 'hidden';
+    fermerB.focus();
+  }
+
+  function fermer(){
+    modal.classList.remove('ouvert');
+    modal.hidden = true;
+    boite.innerHTML = '';                 // detruit l'iframe => coupe le flux
+    document.body.style.overflow = '';
+  }
+
+  fermerB.addEventListener('click', fermer);
+  modal.addEventListener('click', e => { if (e.target === modal) fermer(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal.classList.contains('ouvert')) fermer();
+  });
+
+  CHAINES.forEach(c => c.vignette.addEventListener('click', () => ouvrir(c)));
+
+  async function verifier(c){
+    try {
+      const r = await fetch('https://decapi.me/twitch/uptime/' + encodeURIComponent(c.pseudo));
+      if (!r.ok) return;
+      const t = (await r.text()).trim().toLowerCase();
+      // DecAPI renvoie la duree du direct, ou "<pseudo> is offline"
+      const enDirect = t.length > 0 && !t.includes('offline')
+                       && !t.includes('error') && !t.includes('not found');
+
+      c.item.classList.toggle('est-live', enDirect);
+      if (enDirect) {
+        const u = urlVignette(c.pseudo);
+        if (c.apercu.src !== u) c.apercu.src = u;
+      }
+    } catch (e) {
+      /* service injoignable : on ne touche a rien */
+    }
+  }
+
+  async function tour(){
+    for (let i = 0; i < CHAINES.length; i += PAQUET) {
+      await Promise.all(CHAINES.slice(i, i + PAQUET).map(verifier));
+    }
+  }
+
+  tour();
+  setInterval(tour, RAFRAICHIR);
+})();
 
 
 /* ---------- Coeurs de fond ---------- */

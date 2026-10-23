@@ -562,7 +562,7 @@ const SECTIONS = [
       { n:"jualkytv",    label:"JualkyTV" },
       { n:"azzuria_" },
       { n:"weeny__" },
-      { n:"skyjytv" },
+      { n:"sahaku__" },
       { n:"le_max__" },
       { n:"clodeau" },
       { n:"genki42" },
@@ -578,7 +578,6 @@ const SECTIONS = [
       { n:"majordytv" },
       { n:"pyv_bylkaa", label:"PYV_Bylkaa" },
       { n:"pyv_kurt",  label:"PYV_Kurt" },
-      { n:"sahaku__" },
       { n:"toospycy" },
       { n:"whitelupi_" },
       { n:"thewilk_tv" },
@@ -781,6 +780,7 @@ SECTIONS.forEach(sec => {
 (function directs(){
   const RAFRAICHIR = 60000;   // on revérifie qui est en direct chaque minute
   const PAQUET     = 3;       // seulement pour le repli, voir tourUnParUn()
+  const LOT        = 12;      // chaines par requete Twitch (leur limite est 15)
 
   // identifiant public du site web de Twitch, pas une clé personnelle
   const CLIENT_ID  = 'kimne78kx3ncx6brgo4mv6wki5h1ko';
@@ -842,16 +842,15 @@ SECTIONS.forEach(sec => {
     }
   }
 
-  /* --- Methode principale : UNE seule requete pour les 55 chaines ---
+  /* --- Methode principale : des requetes groupees vers Twitch ---
      On interroge le point d'entree public de Twitch (celui qu'utilise leur
-     propre site) avec une requete groupee. ~2,6 Ko, ~300 ms, et surtout une
-     seule connexion par visiteur au lieu de 55. */
-  async function tourGroupe(){
-    // un login Twitch ne contient que des lettres, chiffres et "_"
-    const liste = CHAINES.filter(c => /^[a-zA-Z0-9_]+$/.test(c.pseudo));
-    if (!liste.length) throw 0;
+     propre site). Chaque requete rapporte la photo ET le statut.
 
-    // on demande la photo ET le statut dans la meme requete
+     ATTENTION : Twitch refuse (erreur 400) au-dela de 15 chaines par requete.
+     D'ou le decoupage en lots de 12, qui laisse une marge si cette limite
+     redescend encore. Pour une cinquantaine de streamers cela fait 5 requetes,
+     au lieu d'une par streamer. */
+  async function lot(liste){
     const champs = liste.map((c, i) =>
       'c' + i + ': user(login:"' + c.pseudo + '"){ profileImageURL(width:300) stream { id } }');
 
@@ -871,7 +870,29 @@ SECTIONS.forEach(sec => {
       appliquer(c, !!(u && u.stream));
       if (u && u.profileImageURL) photos.set(c.pseudo, u.profileImageURL);
     });
-    donnerPhotos(photos);   // debloque les avatars en attente
+    return photos;
+  }
+
+  async function tourGroupe(){
+    // un login Twitch ne contient que des lettres, chiffres et "_"
+    const liste = CHAINES.filter(c => /^[a-zA-Z0-9_]+$/.test(c.pseudo));
+    if (!liste.length) throw 0;
+
+    const photos = new Map();
+    let reussis = 0;
+
+    for (let i = 0; i < liste.length; i += LOT) {
+      try {
+        const m = await lot(liste.slice(i, i + LOT));
+        m.forEach((v, k) => photos.set(k, v));
+        reussis++;
+      } catch (e) {
+        /* ce lot est tombe : les autres continuent quand meme */
+      }
+    }
+
+    if (!reussis) throw 0;      // rien n'est passe : on tente le repli
+    donnerPhotos(photos);       // debloque les avatars en attente
   }
 
   /* --- Repli si Twitch ne repond pas : DecAPI, une chaine a la fois ---
